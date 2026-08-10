@@ -14,7 +14,7 @@ deployable and prevents tight coupling through shared schemas.
 
 ```mermaid
 flowchart TD
-    Client -->|POST /payments| Intake[Intake<br/>FastAPI]
+    Client -->|POST /payments| Intake[Intake API<br/>FastAPI]
     Intake -->|outbox| PaymentEvents[(payment-events<br/>SQS)]
     PaymentEvents --> FraudCheck[Fraud-Check]
     FraudCheck -->|outbox| FraudEvents[(fraud-check-events<br/>SQS)]
@@ -22,7 +22,9 @@ flowchart TD
     FraudEvents -->|decision: review| ReviewAgent[Review-Agent]
     Settlement -->|outbox| SettlementEvents[(settlement-events<br/>SQS)]
     ReviewAgent -->|outbox| ReviewEvents[(review-agent-events<br/>SQS)]
-    FraudEvents -->|status update, async| Intake
+    FraudEvents --> StatusConsumer[Intake: status_consumer]
+    StatusConsumer -->|updates Payment.status| IntakeDB[(intake DB)]
+    Intake -.->|writes| IntakeDB
 ```
 
 **Services built so far:**
