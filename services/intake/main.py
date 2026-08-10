@@ -30,6 +30,7 @@ def create_payment(payment_in: PaymentCreate, db: Session = Depends(get_db)):
         event_type="PaymentCreated",
         payload={
             "payment_id": str(payment.id),
+            "idempotency_key": payment.idempotency_key,
             "amount": str(payment.amount),
             "currency": payment.currency,
         },
