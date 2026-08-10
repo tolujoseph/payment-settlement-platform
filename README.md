@@ -12,29 +12,18 @@ exclusively through published events — never by querying another
 service's database directly. This keeps services independently
 deployable and prevents tight coupling through shared schemas.
 
-Client
-│
-▼
-┌──────────────┐ outbox ┌─────────────────┐
-│ Intake │──────────▶ │ payment-events │ (SQS)
-│ (FastAPI) │ └─────────────────┘
-└──────────────┘ │
-▲ ▼
-│ ┌──────────────┐ outbox ┌───────────────────┐
-│ │ Fraud-Check │──────────▶ │ fraud-check-events │ (SQS)
-│ └──────────────┘ └───────────────────┘
-│ │ │
-│ decision: │ decision:│
-│ approved │ review │
-│ ▼ ▼
-│ ┌──────────────┐ ┌──────────────┐
-│ │ Settlement │ │ Review-Agent │
-│ └──────────────┘ └──────────────┘
-│ status update (async, via │ │
-└──────────────────────────────────────── outbox ▼ outbox ▼
-┌─────────────────┐ ┌───────────────────┐
-│settlement-events│ │review-agent-events│
-└─────────────────┘ └───────────────────┘
+```mermaid
+flowchart TD
+    Client -->|POST /payments| Intake[Intake<br/>FastAPI]
+    Intake -->|outbox| PaymentEvents[(payment-events<br/>SQS)]
+    PaymentEvents --> FraudCheck[Fraud-Check]
+    FraudCheck -->|outbox| FraudEvents[(fraud-check-events<br/>SQS)]
+    FraudEvents -->|decision: approved| Settlement[Settlement]
+    FraudEvents -->|decision: review| ReviewAgent[Review-Agent]
+    Settlement -->|outbox| SettlementEvents[(settlement-events<br/>SQS)]
+    ReviewAgent -->|outbox| ReviewEvents[(review-agent-events<br/>SQS)]
+    FraudEvents -->|status update, async| Intake
+```
 
 **Services built so far:**
 
