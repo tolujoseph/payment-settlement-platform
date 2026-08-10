@@ -1,0 +1,40 @@
+services:
+  intake-db:
+    image: postgres:16
+    container_name: intake-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: intake
+    ports:
+      - "5433:5432"
+    volumes:
+      - intake_db_data:/var/lib/postgresql/data
+
+  localstack:
+    image: localstack/localstack:4.4.0
+    container_name: localstack
+    environment:
+      - SERVICES=sqs
+      - DEBUG=1
+    ports:
+      - "4566:4566"
+    volumes:
+      - localstack_data:/var/lib/localstack
+
+  fraud-check-db:
+    image: postgres:16
+    container_name: fraud-check-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: fraud_check
+    ports:
+      - "5434:5432"
+    volumes:
+      - fraud_check_db_data:/var/lib/postgresql/data
+
+volumes:
+  intake_db_data:
+  localstack_data:
+  fraud_check_db_data:
