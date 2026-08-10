@@ -33,8 +33,32 @@ services:
       - "5434:5432"
     volumes:
       - fraud_check_db_data:/var/lib/postgresql/data
+  settlement-db:
+    image: postgres:16
+    container_name: settlement-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: settlement
+    ports:
+      - "5435:5432"
+    volumes:
+      - settlement_db_data:/var/lib/postgresql/data
+  review-agent-db:
+    image: postgres:16
+    container_name: review-agent-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: review_agent
+    ports:
+      - "5436:5432"
+    volumes:
+      - review_agent_db_data:/var/lib/postgresql/data
 
 volumes:
   intake_db_data:
   localstack_data:
   fraud_check_db_data:
+  settlement_db_data:
+  review_agent_db_data:

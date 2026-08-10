@@ -71,6 +71,8 @@ def process_message(db, message: dict) -> None:
         payload={
             "payment_id": str(fraud_check.payment_id),
             "idempotency_key": fraud_check.idempotency_key,
+            "amount": str(fraud_check.amount),
+            "currency": fraud_check.currency,
             "decision": decision,
             "score": str(score),
         },
