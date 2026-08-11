@@ -6,8 +6,7 @@ where decision == "review", opens a ReviewCase + ReviewCaseEvent
 Current logic is intentionally a stub: it just records the case as
 "pending_review". Planned evolution -- see README -- is an LLM/RAG
 layer reasoning over FCA/CIFAS criteria to make an actual triage
-decision (auto-clear, escalate to human, request more information)
-instead of just parking every case.
+decision instead of just parking every case.
 """
 
 import json
@@ -18,7 +17,7 @@ import boto3
 from database import SessionLocal
 from models import ReviewCase, ReviewCaseEvent
 
-SQS_ENDPOINT_URL = os.getenv("SQS_ENDPOINT_URL", "http://localhost:4566")
+SQS_ENDPOINT_URL = os.getenv("SQS_ENDPOINT_URL") or None
 AWS_REGION = os.getenv("AWS_REGION", "eu-west-2")
 QUEUE_NAME = os.getenv("FRAUD_CHECK_EVENTS_QUEUE_NAME", "fraud-check-events")
 
@@ -26,8 +25,8 @@ sqs = boto3.client(
     "sqs",
     endpoint_url=SQS_ENDPOINT_URL,
     region_name=AWS_REGION,
-    aws_access_key_id="test",
-    aws_secret_access_key="test",
+    aws_access_key_id="test" if SQS_ENDPOINT_URL else None,
+    aws_secret_access_key="test" if SQS_ENDPOINT_URL else None,
 )
 
 _queue_url_cache = None
@@ -45,7 +44,6 @@ def process_message(db, message: dict) -> None:
     payload = body["payload"]
 
     if payload["decision"] != "review":
-        # Not ours -- "approved" goes to Settlement instead.
         sqs.delete_message(QueueUrl=get_queue_url(), ReceiptHandle=message["ReceiptHandle"])
         return
 

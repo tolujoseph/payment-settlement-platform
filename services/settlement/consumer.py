@@ -12,7 +12,7 @@ import boto3
 from database import SessionLocal
 from models import Settlement, SettlementEvent
 
-SQS_ENDPOINT_URL = os.getenv("SQS_ENDPOINT_URL", "http://localhost:4566")
+SQS_ENDPOINT_URL = os.getenv("SQS_ENDPOINT_URL") or None
 AWS_REGION = os.getenv("AWS_REGION", "eu-west-2")
 QUEUE_NAME = os.getenv("FRAUD_CHECK_EVENTS_QUEUE_NAME", "fraud-check-events")
 
@@ -20,8 +20,8 @@ sqs = boto3.client(
     "sqs",
     endpoint_url=SQS_ENDPOINT_URL,
     region_name=AWS_REGION,
-    aws_access_key_id="test",
-    aws_secret_access_key="test",
+    aws_access_key_id="test" if SQS_ENDPOINT_URL else None,
+    aws_secret_access_key="test" if SQS_ENDPOINT_URL else None,
 )
 
 _queue_url_cache = None
@@ -39,16 +39,13 @@ def process_message(db, message: dict) -> None:
     payload = body["payload"]
 
     if payload["decision"] != "approved":
-        # Not ours to act on -- e.g. "review" goes to a different
-        # consumer (the review-triage agent). Delete so it doesn't
-        # get endlessly retried against a filter it'll never pass.
         sqs.delete_message(QueueUrl=get_queue_url(), ReceiptHandle=message["ReceiptHandle"])
         return
 
     settlement = Settlement(
         payment_id=payload["payment_id"],
         idempotency_key=payload.get("idempotency_key"),
-        amount=payload.get("amount", 0),  # see note below
+        amount=payload.get("amount", 0),
         currency=payload.get("currency", ""),
         status="settled",
     )

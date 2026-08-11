@@ -13,7 +13,7 @@ from database import SessionLocal
 from models import ReviewCaseEvent
 
 BATCH_SIZE = 50
-SQS_ENDPOINT_URL = os.getenv("SQS_ENDPOINT_URL", "http://localhost:4566")
+SQS_ENDPOINT_URL = os.getenv("SQS_ENDPOINT_URL") or None
 AWS_REGION = os.getenv("AWS_REGION", "eu-west-2")
 QUEUE_NAME = os.getenv("REVIEW_AGENT_EVENTS_QUEUE_NAME", "review-agent-events")
 
@@ -21,8 +21,8 @@ sqs = boto3.client(
     "sqs",
     endpoint_url=SQS_ENDPOINT_URL,
     region_name=AWS_REGION,
-    aws_access_key_id="test",
-    aws_secret_access_key="test",
+    aws_access_key_id="test" if SQS_ENDPOINT_URL else None,
+    aws_secret_access_key="test" if SQS_ENDPOINT_URL else None,
 )
 
 _queue_url_cache = None

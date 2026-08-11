@@ -11,10 +11,9 @@ import os
 import boto3
 
 from database import SessionLocal
-from models import FraudCheck
 from models import FraudCheck, FraudCheckEvent
 
-SQS_ENDPOINT_URL = os.getenv("SQS_ENDPOINT_URL", "http://localhost:4566")
+SQS_ENDPOINT_URL = os.getenv("SQS_ENDPOINT_URL") or None
 AWS_REGION = os.getenv("AWS_REGION", "eu-west-2")
 QUEUE_NAME = os.getenv("PAYMENT_EVENTS_QUEUE_NAME", "payment-events")
 REVIEW_THRESHOLD = 1000
@@ -23,8 +22,8 @@ sqs = boto3.client(
     "sqs",
     endpoint_url=SQS_ENDPOINT_URL,
     region_name=AWS_REGION,
-    aws_access_key_id="test",
-    aws_secret_access_key="test",
+    aws_access_key_id="test" if SQS_ENDPOINT_URL else None,
+    aws_secret_access_key="test" if SQS_ENDPOINT_URL else None,
 )
 
 _queue_url_cache = None
@@ -63,7 +62,7 @@ def process_message(db, message: dict) -> None:
         score=score,
     )
     db.add(fraud_check)
-    db.flush()  # assigns fraud_check.id without committing yet
+    db.flush()
 
     event = FraudCheckEvent(
         fraud_check_id=fraud_check.id,
@@ -80,9 +79,6 @@ def process_message(db, message: dict) -> None:
     db.add(event)
     db.commit()
 
-    # Only delete after both rows are safely committed together -- if
-    # this process crashes before here, the message reappears after
-    # the visibility timeout and gets retried.
     sqs.delete_message(
         QueueUrl=get_queue_url(),
         ReceiptHandle=message["ReceiptHandle"],
